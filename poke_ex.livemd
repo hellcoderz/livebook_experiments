@@ -21,7 +21,7 @@ model_input = Kino.Input.select("Gemini Model",
 ```
 
 ```elixir
-defmodule PokeAgent do
+defmodule PlannerAgent do
   def plan(model, user_message) do
     system_prompt = """
 You are inteligent planner agent which plans what needs to be done to provide correct response to the User. 
@@ -59,7 +59,7 @@ end
 <!-- livebook:{"output":true} -->
 
 ```
-{:module, PokeAgent, <<70, 79, 82, 49, 0, 0, 10, ...>>, {:plan, 2}}
+{:module, PlannerAgent, <<70, 79, 82, 49, 0, 0, 10, ...>>, {:plan, 2}}
 ```
 
 ```elixir
@@ -73,7 +73,7 @@ queries = [
 model = Kino.Input.read(model_input)
 
 queries
-|> Enum.map(fn query -> query <> "\n" <> PokeAgent.plan(model, query) end)
+|> Enum.map(fn query -> query <> "\n" <> PlannerAgent.plan(model, query) end)
 |> Enum.join("\n-------------------\n")
 |> IO.puts()
 ```
@@ -83,32 +83,32 @@ queries
 ```
 get my recent emails messages and summarize
 - fetch recent email messages
-- summarize the email messages
+- summarize the fetched email messages
 -------------------
 set alarm for 10:15 pm and 5:16 pm
 - set alarm for 10:15 pm
 - set alarm for 5:16 pm
 -------------------
 remind me everytime when i get an email about a job
-- Check user's personal context for email access permissions.
-- Ask user for keywords or criteria to identify "job" emails.
-- Ask user for preferred reminder method (e.g., notification, SMS, another email).
-- Monitor incoming emails.
-- Filter incoming emails based on user-defined criteria for "job" emails.
-- Send a reminder using the user's preferred method when a "job" email is detected.
+- access user's email account
+- monitor incoming emails
+- check user's personal context for keywords or senders to identify job-related emails
+- if job-related email criteria are not found, ask the user for keywords or senders to identify job-related emails
+- filter incoming emails based on the defined job-related criteria
+- check user's personal context for preferred reminder method
+- if preferred reminder method is not found, ask the user for their preferred reminder method
+- send a reminder using the preferred method when a job-related email is received
 -------------------
 check in for my flight
-- check user's emails for flight details
 - check user's calendar for flight details
-- if flight details are not found, ask the user for the airline and booking reference or flight number
-- identify the airline
-- identify the booking reference
+- check user's emails for flight confirmation
+- if flight details are not found, ask user for flight details (airline, flight number, booking reference, passenger name)
 - navigate to the airline's online check-in portal
-- enter the booking reference and passenger name
-- complete the online check-in process
-- confirm successful check-in
+- input the flight details
+- follow the online check-in process
+- confirm the check-in
 - retrieve the boarding pass
-- provide the boarding pass to the user
+- send the boarding pass to the user
 ```
 
 <!-- livebook:{"output":true} -->
@@ -118,76 +118,189 @@ check in for my flight
 ```
 
 ```elixir
-weather_tool = ReqLLM.tool(
-  name: "get_weather",
-  description: "Get current weather for a location",
-  parameter_schema: [location: [type: :string, required: true]],
-  callback: fn _ -> {:ok, "Sunny, 72°F"} end
-)
+defmodule GmailCapability do
+
+  def fetch_gmail_messages(args) do
+    _query = args[:query]
+    _max_count = args[:max_count]
+
+    """
+    Subject: Test Subject 1
+    Body: text body 1
+    Sender: xyz@gmail.com
+    Date: 2025-12-12T13:45:67
+    """
+  end
+  
+  def tools do
+    fetch_gmail_messages = ReqLLM.tool(
+      name: "fetch_gmail_messages",
+      description: "Fetch or read or retreive gmail/email messages",
+      parameter_schema: [
+        query: [type: :string, required: false, default: "in:inbox", 
+          doc: "extract a keywords that will used to search gmail. If none present don't generate a random one."
+        ],
+        max_count: [type: :integer, required: false, default: 10,
+          doc: "count of messages to be retreived. Extract the number if provided i user's query only."
+        ]
+      ],
+      callback: fn args -> fetch_gmail_messages(args) end
+    )
+
+    %{
+      "fetch_gmail_messages" => fetch_gmail_messages
+    }
+  end
+end
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-#Tool<"get_weather" 1 params>
+{:module, GmailCapability, <<70, 79, 82, 49, 0, 0, 12, ...>>, {:tools, 0}}
 ```
 
 ```elixir
-dadjoke_tool = ReqLLM.tool(
-  name: "get_dad_joke",
-  description: "Get a random dad joke",
-  parameter_schema: [],
-  callback: fn _ -> {:ok, ReqLLM.generate_text!(model, "Tell me random dad joke")} end
-)
+defmodule CalendarCapability do
+
+  def fetch_calendar_events(args) do
+    _query = args[:query]
+    _max_count = args[:max_count]
+
+    """
+    Title: Test Event 1
+    Decription: text description 1
+    Owner: xyz@gmail.com
+    Created: 2025-12-12T13:45:67
+    """
+  end
+  
+  def tools do
+    fetch_calendar_events = ReqLLM.tool(
+      name: "fetch_calendar_events",
+      description: "Fetch or read or retreive calendar events",
+      parameter_schema: [
+        query: [type: :string, required: false, default: "", 
+          doc: "extract a keywords that will used to search calendar. If none present don't generate a random one."
+        ],
+        max_count: [type: :integer, required: false, default: 10,
+          doc: "count of events to be retreived. Extract the number if provided i user's query only."
+        ]
+      ],
+      callback: fn args -> fetch_calendar_events(args) end
+    )
+
+    %{
+      "fetch_calendar_events" => fetch_calendar_events
+    }
+  end
+end
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-#Tool<"get_dad_joke" no params>
+{:module, CalendarCapability, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:tools, 0}}
 ```
 
 ```elixir
-{:ok, response} = ReqLLM.generate_text(
-  model,
-  "What's the weather in Paris?",
-  tools: [weather_tool, dadjoke_tool]
-)
+defmodule ResponseCapability do
 
-IO.inspect(ReqLLM.Response.text(response))
-IO.inspect(ReqLLM.Response.tool_calls(response))
+  def generate_response(args) do
+    instruction = args[:instruction]
 
-ReqLLM.Response.tool_calls(response)
-|> Enum.map(fn tool -> ReqLLM.Tool.execute(weather_tool, tool.arguments) end)
+    context = "#{instruction}"
 
+    ReqLLM.generate_text!(
+      "google:gemini-2.5-flash-lite-preview-06-17", 
+      context,
+      temperature: 0.2
+    )
+    
+  end
+  
+  def tools do
+    generate_response = ReqLLM.tool(
+      name: "generate_response",
+      description: "Generate response based on the context and user query for queries outside of tools capability",
+      parameter_schema: [
+        instruction: [type: :string, required: true,
+          doc: "expand the user query into more detailed instruction if possible"
+        ]
+      ],
+      callback: fn args -> generate_response(args) end
+    )
 
+    %{
+      "generate_response" => generate_response
+    }
+  end
+end
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-""
-[%{id: nil, name: "get_weather", arguments: %{"location" => "Paris"}}]
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-[ok: "Sunny, 72°F"]
+{:module, ResponseCapability, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:tools, 0}}
 ```
 
 ```elixir
-{:ok, response} = ReqLLM.generate_text(
-  model,
+defmodule ToolAgent do
+  
+  def run_step(model, step) do
+    system_prompt = 
+"""
+You are a smart helpful agent to provide access to the capabilities added via tools.
+
+Query: <<step>>
+"""
+    tools_map = 
+      [GmailCapability.tools(), CalendarCapability.tools(), ResponseCapability.tools()]
+      |> Enum.reduce(fn tmap, acc -> Map.merge(acc, tmap) end)
+    
+    tools = tools_map |> Enum.map(fn {_, tool} -> tool end)
+
+    context = String.replace(system_prompt, "<<step>>", step)
+
+    {:ok, response } = ReqLLM.generate_text(
+      model, 
+      context, 
+      tools: tools,
+      temperature: 0.1
+    )
+
+    text_response = ReqLLM.Response.text(response)
+    tools_invoked = ReqLLM.Response.tool_calls(response)
+    
+    case length(tools_invoked) do
+      0 -> text_response
+      _ -> 
+        tool_invoked = List.first(tools_invoked)
+        tool_response = ReqLLM.Tool.execute(tools_map[tool_invoked.name], tool_invoked.arguments)
+        text_response <> "\nTool Call: name=#{tool_invoked.name}\n" <> tool_response
+    end
+
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, ToolAgent, <<70, 79, 82, 49, 0, 0, 15, ...>>, {:run_step, 2}}
+```
+
+```elixir
+steps = [
+  "read my emails",
   "tell me a joke",
-  tools: [weather_tool, dadjoke_tool]
-)
+  "do i have any meetings today?"
+]
 
-IO.inspect(ReqLLM.Response.text(response))
-IO.inspect(ReqLLM.Response.tool_calls(response))
-
-ReqLLM.Response.tool_calls(response)
-|> Enum.map(fn tool -> ReqLLM.Tool.execute(dadjoke_tool, tool.arguments) end)
+steps
+|> Enum.map(fn step -> "[step] " <> step <> "\n" <> ToolAgent.run_step(model, step) end)
+|> Enum.join("\n----------------------------\n")
+|> IO.puts()
 
 
 ```
@@ -195,14 +308,108 @@ ReqLLM.Response.tool_calls(response)
 <!-- livebook:{"output":true} -->
 
 ```
-""
-[%{id: nil, name: "get_dad_joke", arguments: %{}}]
+[step] read my emails
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] tell me a joke
+
+Tool Call: name=generate_response
+Why did the scarecrow win an award?
+
+Because he was outstanding in his field!
+----------------------------
+[step] do i have any meetings today?
+
+Tool Call: name=fetch_calendar_events
+Title: Test Event 1
+Decription: text description 1
+Owner: xyz@gmail.com
+Created: 2025-12-12T13:45:67
+
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-[ok: "Why did the scarecrow win an award?\n\nBecause he was outstanding in his field!"]
+:ok
 ```
 
-<!-- livebook:{"offset":4972,"stamp":{"token":"XCP.p9WhjfU2iK9jKpWqPidUqKn-aIsxQ86h6nkhte3BDZqrPLJaEPcpkoLic2_DOUak8q0wBEKkH4fk-u4BItNZxpcmilHMgPyomv9EGV9-GsR0W9APkEQ304I","version":2}} -->
+```elixir
+defmodule PokeAgent do
+  def run(model, query) do
+    plan_steps = PlannerAgent.plan(model, query)
+    plan_steps = String.trim(plan_steps)
+    steps = String.split(plan_steps, "\n") 
+      |> Enum.map(&String.trim/1)
+      |> Enum.map(fn step -> String.replace_prefix(step, "- ", "") end)
+
+    steps
+    |> Enum.map(fn step -> "[step] " <> step <> "\n" <> ToolAgent.run_step(model, step) end)
+    |> Enum.join("\n----------------------------\n")
+    |> IO.puts()
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PokeAgent, <<70, 79, 82, 49, 0, 0, 10, ...>>, {:run, 2}}
+```
+
+```elixir
+model 
+|> PokeAgent.run("summarize my emails")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[step] fetch recent emails
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] summarize the emails
+
+Tool Call: name=generate_response
+You're absolutely right! My apologies. I seem to have gotten ahead of myself and assumed a capability that doesn't exist.
+
+Thank you for the clarification. I appreciate you pointing that out.
+
+**To be clear, I understand that you cannot summarize emails.**
+
+Instead, I can:
+
+*   **Fetch emails based on my query.**
+
+**So, to reiterate, I would like to fetch emails.**
+
+Please let me know how I can best provide you with the information you need to fetch the emails I'm looking for. For example, should I tell you:
+
+*   **Keywords to search for?**
+*   **Sender or recipient names?**
+*   **Date ranges?**
+*   **Subject lines?**
+*   **Any other criteria?**
+
+I'm ready to provide you with the specific details for the emails I'd like to fetch.
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+<!-- livebook:{"offset":10310,"stamp":{"token":"XCP.CM5LfzOXoez32nEoCzA7wNjYOkut4F5iEwP6xIAyBid9CxXLX220QZCOELbVAvA_n4ksdciAw59ulevr_WjayjZVfCFcyhNtlpcrXbVO4lgIGWOG7KwH6Ok","version":2}} -->
