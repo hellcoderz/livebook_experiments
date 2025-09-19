@@ -412,4 +412,203 @@ I'm ready to provide you with the specific details for the emails I'd like to fe
 :ok
 ```
 
-<!-- livebook:{"offset":10310,"stamp":{"token":"XCP.CM5LfzOXoez32nEoCzA7wNjYOkut4F5iEwP6xIAyBid9CxXLX220QZCOELbVAvA_n4ksdciAw59ulevr_WjayjZVfCFcyhNtlpcrXbVO4lgIGWOG7KwH6Ok","version":2}} -->
+```elixir
+model 
+|> PokeAgent.run("check in my flight")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[step] check user's emails and personal context for flight details
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] if flight details are not found, ask user for flight details
+Okay, I understand. If I cannot find flight details, I will ask the user for them.
+----------------------------
+[step] navigate to the airline's check-in portal
+
+Tool Call: name=generate_response
+It sounds like you're trying to get me to do something that involves interacting with a website, like checking in or navigating to a specific page.
+
+I understand that you're looking for help with that, but as an AI, I don't have the ability to:
+
+*   **Browse the internet in real-time.** I can't click on links, fill out forms, or interact with dynamic web content.
+*   **Open external applications or portals.** I'm a language model, not a web browser or an operating system.
+
+**To help you, I need you to provide me with the information directly.**
+
+For example, instead of asking me to "check in on this website," you could:
+
+*   **Tell me what information you need to provide for the check-in.** (e.g., "I need to enter my booking number and last name.")
+*   **Ask me to help you *formulate* the information you need to enter.** (e.g., "Can you help me write a polite message to customer service about a delayed flight?")
+*   **Ask me to *explain* how to do something on a website, if you describe the website's layout.** (e.g., "On a website with a navigation bar at the top, where would I typically find the 'Contact Us' link?")
+
+**Please tell me what you were trying to achieve, and I'll do my best to assist you with the information you can provide to me.**
+----------------------------
+[step] enter the flight details
+I am sorry, I cannot fulfill this request. My current capabilities do not include entering flight details. I can only fetch calendar events, read or retrieve Gmail messages.
+----------------------------
+[step] complete the check-in process
+
+Tool Call: name=generate_response
+To help me complete the check-in process, please provide me with the following:
+
+1.  **The Context:** What kind of check-in are we talking about? For example:
+    *   **Hotel Check-in:** Are you checking into a hotel?
+    *   **Flight Check-in:** Are you checking in for a flight?
+    *   **Event Check-in:** Are you checking into an event (conference, concert, etc.)?
+    *   **App/Service Check-in:** Are you checking into a specific app or online service?
+    *   **Other:** Please specify.
+
+2.  **The User Query:** What is the user trying to do or asking about regarding the check-in? For example:
+    *   "I want to check in."
+    *   "What information do I need to check in?"
+    *   "Can you help me find my booking?"
+    *   "I'm having trouble with the check-in process."
+    *   "What are the check-in times?"
+
+**Once you provide me with this information, I can guide you through the specific steps or answer your questions.**
+
+**For example, if you said:**
+
+*   **Context:** Hotel Check-in
+*   **User Query:** "I want to check in to my room."
+
+**I would respond with something like:**
+
+"Great! To check you into your hotel room, I'll need a few details. Could you please provide:
+
+*   **Your Name:**
+*   **Your Booking Confirmation Number (if you have it):**
+*   **The Name of the Hotel:**
+*   **Your Arrival Date:**
+
+Once I have this information, I can proceed with your check-in."
+----------------------------
+[step] confirm successful check-in
+I am sorry, I cannot fulfill this request. I can fetch calendar events, and gmail messages. I can also generate a response based on context.
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+model 
+|> PokeAgent.run("do i have emails from sam and tom today?")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[step] check user's email
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] filter emails by sender "sam"
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] filter emails by sender "tom"
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] filter emails by date "today"
+
+Tool Call: name=fetch_gmail_messages
+Subject: Test Subject 1
+Body: text body 1
+Sender: xyz@gmail.com
+Date: 2025-12-12T13:45:67
+
+----------------------------
+[step] combine filtered emails
+
+Tool Call: name=generate_response
+You're absolutely right to ask for clarification! My apologies for the ambiguity. When I said "combine filtered emails," I was using a rather loose and potentially misleading term.
+
+Here's what I *actually* meant, and the different operations I might have been thinking of:
+
+**Possible Meanings of "Combine Filtered Emails" and What I Might Have Intended:**
+
+1.  **Consolidating or Aggregating Information from Filtered Emails:**
+    *   **What I might have meant:** I was looking for a way to **extract specific pieces of information** from a set of emails that have been filtered by certain criteria and then **present that information in a summarized or consolidated format.**
+    *   **Example:** If I filtered emails from a specific sender about project updates, I might want to combine them to get a list of all the tasks mentioned, or a summary of the progress reported.
+    *   **This is NOT about merging the actual email content into one giant email.**
+
+2.  **Creating a New Email or Document with the Content of Filtered Emails:**
+    *   **What I might have meant:** I wanted to **take the content of multiple filtered emails and put it into a single new email or document.** This could be for reporting, archiving, or sharing.
+    *   **Example:** If I filtered all the meeting invitations for a particular week, I might want to combine their details (date, time, attendees, subject) into a single summary email to my team.
+    *   **This is closer to "combining" but still not merging the original emails themselves.**
+
+3.  **Archiving or Moving Filtered Emails Together:**
+    *   **What I might have meant:** I wanted to **group a set of filtered emails together for organizational purposes.** This could involve moving them to a specific folder, applying a label, or archiving them as a batch.
+    *   **Example:** If I filtered all emails related to a specific client, I might want to "combine" them by moving them all into a dedicated "Client X" folder.
+    *   **This is a common organizational task, not a content manipulation task.**
+
+4.  **A Misunderstanding of a Specific Tool's Functionality:**
+    *   **What I might have meant:** I might have been thinking of a feature in a specific email client or third-party tool that *does* have a function that sounds like "combining" but actually performs one of the above operations. For instance, some tools might allow you to "export" or "save" multiple emails as a single file (like a PDF or a text file), which could be perceived as "combining."
+
+**In short, I was likely looking for a way to:**
+
+*   **Summarize or extract data from multiple emails.**
+*   **Create a new output (email, document) based on the content of multiple emails.**
+*   **Organize or group multiple emails together.**
+
+**Could you tell me what you were trying to achieve with your filtered emails?** Knowing your goal will help me suggest the correct tools or methods. For example, are you trying to:
+
+*   **Get a quick overview of information?**
+*   **Create a report?**
+*   **Save space or organize your inbox?**
+*   **Share information with someone else?**
+
+Thank you for pointing out my imprecise language!
+----------------------------
+[step] determine if any emails match the criteria
+I can help determine if any emails match certain criteria. What criteria are you looking for? For example, are you searching for emails from a specific sender, with a particular subject, or containing certain keywords?
+----------------------------
+[step] respond to the user
+
+Tool Call: name=generate_response
+Okay, I'm ready! Please tell me what you'd like me to respond to.
+
+To help me give you the best possible response, you can tell me:
+
+*   **What is the topic?**
+*   **What is the context?** (e.g., are you asking a question, making a statement, sharing information, asking for an opinion, etc.?)
+*   **What kind of response are you looking for?** (e.g., a direct answer, an explanation, a creative story, a summary, a suggestion, etc.)
+
+I'm looking forward to hearing from you!
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+<!-- livebook:{"offset":19185,"stamp":{"token":"XCP.OSX9Es5fPMWP7GwWj3AIJBY-GWqI_L91a5UX8TFDhn-1zdUiWjiLzKwHQJtlmX7x4JdwB1aWb7bYis3fMiVDcnp7cZx5dhSJscMzlKzvYaMbKDat6RhhhZk","version":2}} -->
