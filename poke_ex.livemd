@@ -1,0 +1,208 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# PokeEx
+
+```elixir
+Mix.install([
+  {:req_llm, "~> 1.0.0-rc.2"},
+  {:kino, "~> 0.17.0"},
+  {:jido_keys, "~> 1.0"},
+  {:jason, "~> 1.4"}
+])
+```
+
+## Section
+
+```elixir
+ReqLLM.put_key(:google_api_key, System.fetch_env!("LB_GEMINI_API_KEY"))
+model_input = Kino.Input.select("Gemini Model", 
+  [{"google:gemini-2.5-flash-lite-preview-06-17", "gemini-2.5-flash-lite"}, {"google:gemini-2.5-flash", "gemini-2.5-flash"}]
+)
+```
+
+```elixir
+defmodule PokeAgent do
+  def plan(model, user_message) do
+    system_prompt = """
+You are inteligent planner agent which plans what needs to be done to provide correct response to the User. 
+Do not output any other thing except the plan in the form of bulleted list.
+-------------------
+
+Examples:
+User Request: summarize my emails 
+Plan:
+- fetch recent emails
+- summarize the emails
+
+----------
+Output format:
+Only respond with bulleted list of steps to take to complete the user's request.
+
+Steps generation instructions:
+- each steps should do one task only
+- each step should be simple enough
+- each step should clear enough
+- if step is not clear add a step to ask user clarifying question to resolve the step
+- anytime you want to ask user for details create a step to check their emails and personal context
+
+
+User Request: <<user_msg>>
+Plan: 
+"""
+
+    context = String.replace(system_prompt, "<<user_msg>>", user_message)
+    ReqLLM.generate_text!(model, context, temperature: 0.1)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PokeAgent, <<70, 79, 82, 49, 0, 0, 10, ...>>, {:plan, 2}}
+```
+
+```elixir
+queries = [
+  "get my recent emails messages and summarize",
+  "set alarm for 10:15 pm and 5:16 pm",
+  "remind me everytime when i get an email about a job",
+  "check in for my flight"
+]
+
+model = Kino.Input.read(model_input)
+
+queries
+|> Enum.map(fn query -> query <> "\n" <> PokeAgent.plan(model, query) end)
+|> Enum.join("\n-------------------\n")
+|> IO.puts()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+get my recent emails messages and summarize
+- fetch recent email messages
+- summarize the email messages
+-------------------
+set alarm for 10:15 pm and 5:16 pm
+- set alarm for 10:15 pm
+- set alarm for 5:16 pm
+-------------------
+remind me everytime when i get an email about a job
+- Check user's personal context for email access permissions.
+- Ask user for keywords or criteria to identify "job" emails.
+- Ask user for preferred reminder method (e.g., notification, SMS, another email).
+- Monitor incoming emails.
+- Filter incoming emails based on user-defined criteria for "job" emails.
+- Send a reminder using the user's preferred method when a "job" email is detected.
+-------------------
+check in for my flight
+- check user's emails for flight details
+- check user's calendar for flight details
+- if flight details are not found, ask the user for the airline and booking reference or flight number
+- identify the airline
+- identify the booking reference
+- navigate to the airline's online check-in portal
+- enter the booking reference and passenger name
+- complete the online check-in process
+- confirm successful check-in
+- retrieve the boarding pass
+- provide the boarding pass to the user
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+weather_tool = ReqLLM.tool(
+  name: "get_weather",
+  description: "Get current weather for a location",
+  parameter_schema: [location: [type: :string, required: true]],
+  callback: fn _ -> {:ok, "Sunny, 72°F"} end
+)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Tool<"get_weather" 1 params>
+```
+
+```elixir
+dadjoke_tool = ReqLLM.tool(
+  name: "get_dad_joke",
+  description: "Get a random dad joke",
+  parameter_schema: [],
+  callback: fn _ -> {:ok, ReqLLM.generate_text!(model, "Tell me random dad joke")} end
+)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Tool<"get_dad_joke" no params>
+```
+
+```elixir
+{:ok, response} = ReqLLM.generate_text(
+  model,
+  "What's the weather in Paris?",
+  tools: [weather_tool, dadjoke_tool]
+)
+
+IO.inspect(ReqLLM.Response.text(response))
+IO.inspect(ReqLLM.Response.tool_calls(response))
+
+ReqLLM.Response.tool_calls(response)
+|> Enum.map(fn tool -> ReqLLM.Tool.execute(weather_tool, tool.arguments) end)
+
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+""
+[%{id: nil, name: "get_weather", arguments: %{"location" => "Paris"}}]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[ok: "Sunny, 72°F"]
+```
+
+```elixir
+{:ok, response} = ReqLLM.generate_text(
+  model,
+  "tell me a joke",
+  tools: [weather_tool, dadjoke_tool]
+)
+
+IO.inspect(ReqLLM.Response.text(response))
+IO.inspect(ReqLLM.Response.tool_calls(response))
+
+ReqLLM.Response.tool_calls(response)
+|> Enum.map(fn tool -> ReqLLM.Tool.execute(dadjoke_tool, tool.arguments) end)
+
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+""
+[%{id: nil, name: "get_dad_joke", arguments: %{}}]
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[ok: "Why did the scarecrow win an award?\n\nBecause he was outstanding in his field!"]
+```
+
+<!-- livebook:{"offset":4972,"stamp":{"token":"XCP.p9WhjfU2iK9jKpWqPidUqKn-aIsxQ86h6nkhte3BDZqrPLJaEPcpkoLic2_DOUak8q0wBEKkH4fk-u4BItNZxpcmilHMgPyomv9EGV9-GsR0W9APkEQ304I","version":2}} -->
